@@ -6,31 +6,39 @@ from PIL import Image
 import torchvision.transforms as transforms
 
 class LightingDataset(Dataset):
-    def __init__(self, root_dir):
+    def __init__(self, root_dir, transform=None):
         self.root_dir = root_dir
-        self.image_files = sorted([f for f in os.listdir(root_dir) if f.endswith('.jpg')])
-
-        self.transforms = transforms.Compose([
+        self.images_dir = os.path.join(root_dir, 'LSMI', 'image')
+        self.normals_dir = os.path.join(root_dir, 'LSMI', 'normal')
+        self.image_files = sorted(os.listdir(self.images_dir))
+        
+        self.transform = transform or transforms.Compose([
+            transforms.Resize((256, 256)),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
+        
+        self.orig_transform = transforms.Compose([
+            transforms.Resize((256, 256)),
+            transforms.ToTensor()
         ])
 
     def __len__(self):
         return len(self.image_files)
 
     def __getitem__(self, idx):
-        img_name = os.path.join(self.root_dir, self.image_files[idx])
-        img = Image.open(img_name).convert('RGB')
-
-        img_tensor = self.transforms(img)
-        return img_tensor, img_name
-
-    def get_normal_depth(self, img_name):
-        normal_name = img_name.replace('Place', 'Normal')
-        depth_name = img_name.replace('Place', 'Depth')
-        normal = Image.open(normal_name).convert('RGB')
-        depth = Image.open(depth_name).convert('L')
+        img_name = self.image_files[idx]
+        img_path = os.path.join(self.images_dir, img_name)
+        normal_path = os.path.join(self.normals_dir, img_name.replace('image', 'normal'))  # Adjust if naming convention differs
         
-        normal_tensor = self.transforms(normal)
-        depth_tensor = self.transforms(depth)
-        return normal_tensor, depth_tensor
+        # Load image and normal map
+        img = Image.open(img_path).convert('RGB')
+        normal_img = Image.open(normal_path).convert('RGB')
+        
+        # Transform
+        img_tensor = self.transform(img)
+        normal_tensor = self.transform(normal_img)
+        orig_img_tensor = self.orig_transform(img)  # 원본 이미지 텐서
+
+        return normal_tensor, orig_img_tensor, img_name  # Return normal map as the main input
+
