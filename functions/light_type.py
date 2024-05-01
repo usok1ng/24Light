@@ -1,3 +1,7 @@
+# light_type.py
+
+import numpy as np
+
 def parse_light_types(image_filenames):
     light_types = []
 

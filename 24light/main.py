@@ -1,3 +1,5 @@
+# main.py
+
 import torch
 from model import ShadingNet
 from dataset import LightingDataset
@@ -10,6 +12,7 @@ def main():
     dataset = LightingDataset(image_dir='LSMI Data')
     dataloader = DataLoader(dataset, batch_size=4, shuffle=True)
     model = ShadingNet().to(device)
+
     train_model(model, dataloader, device)
 
 if __name__ == "__main__":
